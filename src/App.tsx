@@ -22,42 +22,41 @@ import {
   ArrowRight,
   Save,
   Bookmark,
-  History
+  History,
+  MapPin
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { PrescriptionResponse, MedicationItem } from './types';
+import VisitorCounter from './components/VisitorCounter';
 
-// Real-world BUET Medical Center default details from the uploaded image!
-const DEFAULT_PRESCRIPTION_STATE = {
-  patientName: 'T.M.A. Iqbal Bin Belal',
-  patientId: '1911046',
-  age: 26,
-  department: 'MME',
-  designation: 'L4 T1 (BSc_MME_JUL2023)',
+// Blank initial prescription state so app starts completely blank on load
+const BLANK_PRESCRIPTION_STATE = {
+  location: '',
+  patientName: '',
+  patientId: '',
+  age: '' as string | number,
+  department: '',
+  designation: '',
   doctorName: '',
-  appointmentNo: '5',
-  appointmentTime: '4/6/2024 12:37:26 PM',
-  pulse: '76 bpm',
-  bloodPressure: '120/80 mmHg',
-  temperature: '98.4 °F',
-  heart: 'Normal S1 S2',
-  lung: 'VES clear',
-  chiefComplaints: 'Itchy skin lesion over thigh extending up to buttock',
-  pastMedicalHistory: 'No prior systemic diseases. No history of drug allergies.',
-  otherFindings: 'Erythematous scaly plaque with active margin in crotch region',
-  diagnosis: 'Tinea Cruris (Fungal skin infection)',
-  doctorNote: 'Savlon/dettol water diye dhuye apply cream. Keep dry.',
-  requiredTests: [
-    'Skin Scraping for KOH microscopy test',
-    'Complete Blood Count (CBC)'
-  ],
-  medications: [
-    { id: 'm1', name: 'Combicid cream (#)', distribution: 'apply over the affected area for 2 times', duration: '14 days' },
-    { id: 'm2', name: 'Tab. Itra 200mg (#)', distribution: '1+0+1', duration: '14 days after meal' },
-    { id: 'm3', name: 'Tab. Xyril 50mg (#)', distribution: '0+0+1', duration: '7 days after meal' }
-  ] as MedicationItem[],
-  summaryMessage: 'Clinical findings are consistent with Tinea Cruris (ringworm infection). Advised personal hygiene, daily shower, avoid wet clothing, and follow-up in 2 weeks.'
+  appointmentNo: '',
+  appointmentTime: '',
+  pulse: '',
+  bloodPressure: '',
+  temperature: '',
+  heart: '',
+  lung: '',
+  chiefComplaints: '',
+  pastMedicalHistory: '',
+  otherFindings: '',
+  diagnosis: '',
+  doctorNote: '',
+  requiredTests: [] as string[],
+  medications: [] as MedicationItem[],
+  prescriptionNo: '',
+  summaryMessage: ''
 };
+
+const DEFAULT_PRESCRIPTION_STATE = BLANK_PRESCRIPTION_STATE;
 
 interface MedicineDetails {
   generic: string;
@@ -215,208 +214,98 @@ export const getMedicineDetails = (name: string): MedicineDetails => {
   };
 };
 
-const INITIAL_PRESETS = [
-  {
-    title: 'UA Initial (Fungal Infection)',
-    complaints: 'Itchy skin lesion over thigh extending up to buttock',
-    history: 'No history of chronic illness or drug allergies.',
-    diagnosis: 'Tinea Cruris (Fungal skin infection)',
-    tests: ['Skin Scraping for KOH microscopy test', 'Complete Blood Count (CBC)'],
-    notes: 'Savlon/dettol water diye dhuye apply cream.',
-    medications: [
-      { id: 'f1', name: 'Combicid cream (#)', distribution: 'apply over the affected area for 2 times', duration: '14 days' },
-      { id: 'f2', name: 'Tab. Itra 200mg (#)', distribution: '1+0+1', duration: '14 days after meal' },
-      { id: 'f3', name: 'Tab. Xyril 50mg (#)', distribution: '0+0+1', duration: '7 days after meal' }
-    ]
-  },
-  {
-    title: 'Fever & Cold (URTI)',
-    complaints: 'High fever for 3 days (101 F), persistent sore throat, body aches, dry cough.',
-    history: 'History of allergic rhinitis.',
-    diagnosis: 'Acute Tonsillopharyngitis / Flu',
-    tests: ['Complete Blood Count (CBC) with ESR', 'Throat Swab Culture', 'Chest X-ray (P/A View)'],
-    notes: 'Gargle with warm salt water 4 times daily. Avoid chilled food items.',
-    medications: [
-      { id: 'c1', name: 'Tab. Napa Extend 665mg', distribution: '1+1+1', duration: '5 days after meal' },
-      { id: 'c2', name: 'Tab. Fexo 120mg', distribution: '0+0+1', duration: '10 days after meal' },
-      { id: 'c3', name: 'Syp. Adryst (Cough Syrup)', distribution: '2 tsp daily 3 times', duration: '7 days' }
-    ]
-  },
-  {
-    title: 'Stomach Pain & Gas (Dyspepsia)',
-    complaints: 'Severe burning epigastric pain, acid reflux, nausea, loss of appetite after meals.',
-    history: 'Occasional gastric complaints; self-medicates with antacids.',
-    diagnosis: 'Gastroesophageal Reflux Disease (GERD) with Mild Gastritis',
-    tests: ['Ultrasonography of Upper Abdomen', 'Serum Amylase'],
-    notes: 'Avoid spicy, deep-fried food. Maintain strict meal timings.',
-    medications: [
-      { id: 'g1', name: 'Cap. Maxpro 20mg (Esomeprazole)', distribution: '1+0+1 (30 mins before food)', duration: '14 days' },
-      { id: 'g2', name: 'Tab. Entacyd Plus (Chewable Antacid)', distribution: '1 tablet 1 hour after meal', duration: '5 days' }
-    ]
-  },
-  {
-    title: 'Hypertension & Exam Anxiety',
-    complaints: 'Throbbing headache for 2 days, neck muscle stiffness, mild dizziness during exam revision.',
-    history: 'Family history of primary hypertension.',
-    diagnosis: 'Essential Hypertension',
-    tests: ['Fasting Serum Lipid Profile', 'Serum Creatinine', 'Electrocardiogram (ECG)'],
-    notes: 'Avoid extra table salt or greasy street foods. Maintain 7 hours of baseline sleep daily.',
-    medications: [
-      { id: 'hy1', name: 'Tab. Osartil 50mg (Losartan)', distribution: '0+0+1', duration: '30 days after food' },
-      { id: 'hy2', name: 'Tab. Napa Extend 665mg', distribution: '1+0+1 (if severe headache occurs)', duration: '3 days after food' }
-    ]
-  },
-  {
-    title: 'Type-2 Diabetes Routine Visit',
-    complaints: 'Fatigue, increased thirst, polyuria, weight loss of about 3kg in last 1 month.',
-    history: 'Maternal history of Type 2 Diabetes.',
-    diagnosis: 'Uncontrolled Diabetes mellitus Type II',
-    tests: ['HbA1c (Glycated Hemoglobin)', 'Fasting Blood Sugar (FBS)', 'Serum Creatinine'],
-    notes: 'Daily morning walk for 45 mins. Strictly limit sugar and processed carbohydrates.',
-    medications: [
-      { id: 'dia1', name: 'Tab. Comet 500mg (Metformin)', distribution: '0+1+0', duration: '30 days with lunch' }
-    ]
-  },
-  {
-    title: 'Common Allergic Skin Rash',
-    complaints: 'Highly itchy erythematous skin rash behind neck and hands; started after a local dye application.',
-    history: 'History of atopic bronchial asthma.',
-    diagnosis: 'Allergic Contact Dermatitis',
-    tests: ['Complete Immunoglobulin E (IgE)', 'Serum CBC with Absolute Eosinophil Count'],
-    notes: 'Identify allergen, stop using scented soaps or skin dyes. Apply cooling calamine lotion.',
-    medications: [
-      { id: 'derm1', name: 'Elocon Cream (Mometasone 0.1%)', distribution: 'thin layer application over rash at night', duration: '7 days' },
-      { id: 'derm2', name: 'Tab. Bilastin 20mg', distribution: '1+0+0 (30 mins before breakfast)', duration: '10 days' }
-    ]
-  },
-  {
-    title: 'Bronchial Asthma / Wheezing',
-    complaints: 'Shortness of breath, mild expiratory wheeze, nocturnal dry cough aggravated by dust/cold.',
-    history: 'Known asthma patient since childhood; uses occasional bronchodilators.',
-    diagnosis: 'Moderate Persistent Bronchial Asthma',
-    tests: ['Spirometry (Lung Function)', 'Chest X-ray (P/A View)'],
-    notes: 'Avoid exposure to dust, aerosol sprays, and tobacco smoke. Use hot water steam inhalation.',
-    medications: [
-      { id: 'as1', name: 'Inhaler Windel (Salbutamol Spray)', distribution: '2 puffs if breathlessness occurs', duration: 'As needed' },
-      { id: 'as2', name: 'Tab. Monas 10mg (Montelukast)', distribution: '0+0+1', duration: '14 days before sleeping' }
-    ]
-  },
-  {
-    title: 'Acute Urinary Tract Infection',
-    complaints: 'Burning urination, strong urinary urgency, lower abdominal dull pain, mild fever.',
-    history: 'No history of chronic renal calculus or diabetes.',
-    diagnosis: 'Acute Cystitis / UTI',
-    tests: ['Urine Routine Microscopic Examination (Urine R/M/E)', 'Urine Culture & Sensitivity (C/S)'],
-    notes: 'Drink at least 3.5 to 4 liters of clean water daily. Do not hold urine.',
-    medications: [
-      { id: 'uti1', name: 'Cap. Alporad 500mg (Ciprofloxacin)', distribution: '1+0+1', duration: '7 days after meal' },
-      { id: 'uti2', name: 'Syp. Alkauri (Potassium Citrate)', distribution: '2 teaspoons diluted in water 3 times daily', duration: '5 days' }
-    ]
-  },
-  {
-    title: 'Acute Sinusitis / Sinus Pressure',
-    complaints: 'Severe throbbing headache, painful pressure behind forehead and cheekbones, thick yellowish nasal discharge for 5 days.',
-    history: 'History of chronic allergic rhinitis, frequent nasal congestion.',
-    diagnosis: 'Acute Maxillary & Frontal Sinusitis',
-    tests: ['X-ray Paranasal Sinuses (PNS) - O/M View', 'Complete Blood Count (CBC) with Absolute Eosinophil Count'],
-    notes: 'Ensure steam inhalation 3 times daily. Avoid sitting under directly blowing air-conditioners or fans. Stay hydrated.',
-    medications: [
-      { id: 'sin1', name: 'Rhino Nasal Drops (Xylometazoline 0.1%)', distribution: '1-2 drops into each nostril 3 times daily', duration: '5 days' },
-      { id: 'sin2', name: 'Tab. Napa Extend 665mg', distribution: '1+0+1', duration: '5 days after meal' },
-      { id: 'sin3', name: 'Tab. Fexo 120mg', distribution: '0+0+1', duration: '10 days after meal' }
-    ]
-  },
-  {
-    title: 'Regular Checkup / Routine Screening',
-    complaints: 'Asymptomatic. Patient requested routine medical examination and baseline health screen.',
-    history: 'No known major chronic illness, standard baseline parameters.',
-    diagnosis: 'Routine General Medical Examination & Screening',
-    tests: ['Complete Blood Count (CBC) with ESR', 'Fasting Blood Sugar (FBS)', 'Lipid Profile (Fasting)', 'Serum Creatinine', 'Urine Routine Examination (R/M/E)'],
-    notes: 'Walk daily for 30-40 minutes. Drink plenty of water and follow up with test reports in 3 days.',
-    medications: []
-  }
-];
-
-const getSavedInput = <K extends keyof typeof DEFAULT_PRESCRIPTION_STATE | 'prescriptionNo'>(key: K): any => {
-  try {
-    const stored = localStorage.getItem('buet_last_prescription_inputs');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed && parsed[key] !== undefined) {
-        return parsed[key];
-      }
-    }
-  } catch (err) {
-    console.error("Failed to parse last saved inputs:", err);
-  }
-  if (key === 'prescriptionNo') return '80551';
-  return (DEFAULT_PRESCRIPTION_STATE as any)[key];
-};
-
 export default function App() {
-  // Preset symptomatologies with localStorage persistence
-  const [dynamicPresets, setDynamicPresets] = useState<any[]>(() => {
-    try {
-      const stored = localStorage.getItem('buet_dynamic_presets');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (err) {
-      console.error("Failed to parse local preset storage:", err);
-    }
-    return INITIAL_PRESETS;
-  });
+  // Core administrative states - blank on load
+  const [location, setLocation] = useState<string>('');
+  const [patientName, setPatientName] = useState<string>('');
+  const [patientId, setPatientId] = useState<string>('');
+  const [age, setAge] = useState<string | number>('');
+  const [department, setDepartment] = useState<string>('');
+  const [designation, setDesignation] = useState<string>('');
+  const [doctorName, setDoctorName] = useState<string>('');
+  const [appointmentNo, setAppointmentNo] = useState<string>('');
+  const [appointmentTime, setAppointmentTime] = useState<string>('');
 
-  const [selectedPresetTitle, setSelectedPresetTitle] = useState<string>('');
-  const [caseSaveFeedback, setCaseSaveFeedback] = useState<string | null>(null);
+  // Vitals states - blank on load
+  const [pulse, setPulse] = useState<string>('');
+  const [bloodPressure, setBloodPressure] = useState<string>('');
+  const [temperature, setTemperature] = useState<string>('');
+  const [heart, setHeart] = useState<string>('');
+  const [lung, setLung] = useState<string>('');
 
-  // Core administrative states
-  const [patientName, setPatientName] = useState<string>(() => getSavedInput('patientName'));
-  const [patientId, setPatientId] = useState<string>(() => getSavedInput('patientId'));
-  const [age, setAge] = useState<number>(() => getSavedInput('age'));
-  const [department, setDepartment] = useState<string>(() => getSavedInput('department'));
-  const [designation, setDesignation] = useState<string>(() => getSavedInput('designation'));
-  const [doctorName, setDoctorName] = useState<string>(() => getSavedInput('doctorName'));
-  const [appointmentNo, setAppointmentNo] = useState<string>(() => getSavedInput('appointmentNo'));
-  const [appointmentTime, setAppointmentTime] = useState<string>(() => getSavedInput('appointmentTime'));
+  // Clinical symptom inputs, diagnosis, and findings - blank on load
+  const [chiefComplaints, setChiefComplaints] = useState<string>('');
+  const [pastMedicalHistory, setPastMedicalHistory] = useState<string>('');
+  const [otherFindings, setOtherFindings] = useState<string>('');
+  const [diagnosis, setDiagnosis] = useState<string>('');
+  const [doctorNote, setDoctorNote] = useState<string>('');
 
-  // Vitals states
-  const [pulse, setPulse] = useState<string>(() => getSavedInput('pulse'));
-  const [bloodPressure, setBloodPressure] = useState<string>(() => getSavedInput('bloodPressure'));
-  const [temperature, setTemperature] = useState<string>(() => getSavedInput('temperature'));
-  const [heart, setHeart] = useState<string>(() => getSavedInput('heart'));
-  const [lung, setLung] = useState<string>(() => getSavedInput('lung'));
-
-  // Clinical symptom inputs, diagnosis, and findings
-  const [chiefComplaints, setChiefComplaints] = useState<string>(() => getSavedInput('chiefComplaints'));
-  const [pastMedicalHistory, setPastMedicalHistory] = useState<string>(() => getSavedInput('pastMedicalHistory'));
-  const [otherFindings, setOtherFindings] = useState<string>(() => getSavedInput('otherFindings'));
-  const [diagnosis, setDiagnosis] = useState<string>(() => getSavedInput('diagnosis'));
-  const [doctorNote, setDoctorNote] = useState<string>(() => getSavedInput('doctorNote'));
-
-  // Required Tests
-  const [requiredTests, setRequiredTests] = useState<string[]>(() => getSavedInput('requiredTests'));
+  // Required Tests - blank on load
+  const [requiredTests, setRequiredTests] = useState<string[]>([]);
   const [newTestText, setNewTestText] = useState('');
 
-  // Medications Rx Table
-  const [medications, setMedications] = useState<MedicationItem[]>(() => getSavedInput('medications'));
+  // Medications Rx Table - blank on load
+  const [medications, setMedications] = useState<MedicationItem[]>([]);
   
   // Custom Medication Add states
   const [newMedName, setNewMedName] = useState('');
-  const [newMedDist, setNewMedDist] = useState('1+0+1');
-  const [newMedDur, setNewMedDur] = useState('7 days after meal');
+  const [newMedDist, setNewMedDist] = useState('');
+  const [newMedDur, setNewMedDur] = useState('');
 
   // Generator Loading states
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<boolean>(false);
-  const [prescriptionNo, setPrescriptionNo] = useState<string>(() => getSavedInput('prescriptionNo'));
+  const [prescriptionNo, setPrescriptionNo] = useState<string>('');
 
   // Interactive Clinical Enquiry parameters
   const [enquiryInput, setEnquiryInput] = useState('');
   const [isAnsweringEnquiry, setIsAnsweringEnquiry] = useState(false);
   const [enquiryAnswer, setEnquiryAnswer] = useState<string | null>(null);
   const [enquiryError, setEnquiryError] = useState<string | null>(null);
+
+  // Clear all inputs and outputs back to completely blank
+  const handleClearAll = () => {
+    setLocation('');
+    setPatientName('');
+    setPatientId('');
+    setAge('');
+    setDepartment('');
+    setDesignation('');
+    setDoctorName('');
+    setAppointmentNo('');
+    setAppointmentTime('');
+    setPulse('');
+    setBloodPressure('');
+    setTemperature('');
+    setHeart('');
+    setLung('');
+    setChiefComplaints('');
+    setPastMedicalHistory('');
+    setOtherFindings('');
+    setDiagnosis('');
+    setDoctorNote('');
+    setRequiredTests([]);
+    setNewTestText('');
+    setMedications([]);
+    setNewMedName('');
+    setNewMedDist('');
+    setNewMedDur('');
+    setPrescriptionNo('');
+    setEnquiryInput('');
+    setEnquiryAnswer(null);
+    setEnquiryError(null);
+    setErrorMessage(null);
+    try {
+      localStorage.removeItem('buet_last_prescription_inputs');
+    } catch (err) {}
+  };
+
+  // Generate a realistic random prescription number
+  const handleGeneratePrescriptionNo = () => {
+    const randNo = Math.floor(80000 + Math.random() * 5000).toString();
+    setPrescriptionNo(randNo);
+  };
 
   // Handle sending clinical prescription query
   const handleSendEnquiry = async (customQuery?: string) => {
@@ -472,65 +361,19 @@ export default function App() {
     }
   }, []);
 
-  // Sync inputs with localStorage to always save the last prescription and inputs
+  // Clear any previous persistent input caches on mount so app always starts blank
   useEffect(() => {
     try {
-      const inputsToSave = {
-        patientName,
-        patientId,
-        age,
-        department,
-        designation,
-        doctorName,
-        appointmentNo,
-        appointmentTime,
-        pulse,
-        bloodPressure,
-        temperature,
-        heart,
-        lung,
-        chiefComplaints,
-        pastMedicalHistory,
-        otherFindings,
-        diagnosis,
-        doctorNote,
-        requiredTests,
-        medications,
-        prescriptionNo
-      };
-      localStorage.setItem('buet_last_prescription_inputs', JSON.stringify(inputsToSave));
-    } catch (err) {
-      console.error("Failed to save current inputs to localStorage:", err);
-    }
-  }, [
-    patientName,
-    patientId,
-    age,
-    department,
-    designation,
-    doctorName,
-    appointmentNo,
-    appointmentTime,
-    pulse,
-    bloodPressure,
-    temperature,
-    heart,
-    lung,
-    chiefComplaints,
-    pastMedicalHistory,
-    otherFindings,
-    diagnosis,
-    doctorNote,
-    requiredTests,
-    medications,
-    prescriptionNo
-  ]);
+      localStorage.removeItem('buet_last_prescription_inputs');
+    } catch (err) {}
+  }, []);
 
   const handleSavePrescription = () => {
     try {
       const newSaved = {
         id: 'saved_' + Date.now(),
         prescriptionNo,
+        location,
         patientName,
         patientId,
         age,
@@ -584,14 +427,15 @@ export default function App() {
   };
 
   const handleLoadPrescription = (saved: any) => {
-    setPrescriptionNo(saved.prescriptionNo);
-    setPatientName(saved.patientName);
+    setPrescriptionNo(saved.prescriptionNo || '');
+    setLocation(saved.location || '');
+    setPatientName(saved.patientName || '');
     setPatientId(saved.patientId || '');
-    setAge(saved.age || 26);
+    setAge(saved.age || '');
     setDepartment(saved.department || '');
     setDesignation(saved.designation || '');
-    setDoctorName(saved.doctorName || DEFAULT_PRESCRIPTION_STATE.doctorName);
-    setAppointmentNo(saved.appointmentNo || '5');
+    setDoctorName(saved.doctorName || '');
+    setAppointmentNo(saved.appointmentNo || '');
     setAppointmentTime(saved.appointmentTime || '');
     setPulse(saved.pulse || '');
     setBloodPressure(saved.bloodPressure || '');
@@ -615,70 +459,6 @@ export default function App() {
     setAppointmentTime(formatted);
   };
 
-  // Preset Applier
-  const applyPreset = (preset: any) => {
-    setChiefComplaints(preset.complaints);
-    setPastMedicalHistory(preset.history);
-    setDiagnosis(preset.diagnosis);
-    setRequiredTests(preset.tests);
-    setDoctorNote(preset.notes);
-    setMedications(preset.medications);
-    setSelectedPresetTitle(preset.title);
-    
-    // Randomize prescription index slightly for realistic feel
-    const randNo = Math.floor(80000 + Math.random() * 5000).toString();
-    setPrescriptionNo(randNo);
-  };
-
-  // Saves current clinical profile, including any modified medicines, back to the dynamic state
-  const handleSaveToPreset = (titleToSave?: string) => {
-    const targetTitle = titleToSave || selectedPresetTitle || diagnosis || "Custom Preserved Case";
-    try {
-      const updatedPresets = [...dynamicPresets];
-      const index = updatedPresets.findIndex(p => p.title.toLowerCase() === targetTitle.toLowerCase());
-      
-      const newPresetObj = {
-        title: targetTitle,
-        complaints: chiefComplaints,
-        history: pastMedicalHistory,
-        diagnosis: diagnosis || targetTitle,
-        tests: requiredTests,
-        notes: doctorNote,
-        medications: medications
-      };
-
-      if (index > -1) {
-        updatedPresets[index] = newPresetObj;
-      } else {
-        updatedPresets.push(newPresetObj);
-      }
-
-      setDynamicPresets(updatedPresets);
-      localStorage.setItem('buet_dynamic_presets', JSON.stringify(updatedPresets));
-      setSelectedPresetTitle(targetTitle);
-      
-      setCaseSaveFeedback("Case template saved successfully!");
-      setTimeout(() => setCaseSaveFeedback(null), 3500);
-    } catch (err) {
-      console.error("Error saving case preset:", err);
-    }
-  };
-
-  // Reset presets array back to initial template default
-  const handleResetPresetsToDefault = () => {
-    if (window.confirm("Are you sure you want to restore original default cases? This will clear any custom saved/updated preset cases.")) {
-      try {
-        localStorage.removeItem('buet_dynamic_presets');
-        setDynamicPresets(INITIAL_PRESETS);
-        setSelectedPresetTitle('');
-        setCaseSaveFeedback("Prescriptions database restored to defaults.");
-        setTimeout(() => setCaseSaveFeedback(null), 3500);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
   // Call server-side API to generate prescription details from current symptoms using Gemini
   const handleGenerateFromSymptoms = async () => {
     setIsGenerating(true);
@@ -690,6 +470,7 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          location,
           patientName,
           patientId,
           age,
@@ -774,6 +555,7 @@ Prescription No: #${prescriptionNo}
 ---------------------------------------------------------
 PATIENT DETAILS:
 Patient: ${patientName}
+Location / Site: ${location || '—'}
 Age: ${age} Years | Department: ${department}
 Appoint No: ${appointmentNo} | App Taken: ${appointmentTime}
 ---------------------------------------------------------
@@ -886,16 +668,18 @@ Generated on: ${new Date().toLocaleString()}
       doc.setFont("Courier", "bold");
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text(`Prescription #${prescriptionNo}`, pageWidth - margin, y - 2, { align: 'right' });
+      doc.text(`Prescription #${prescriptionNo || "—"}`, pageWidth - margin, y - 2, { align: 'right' });
       
-      // Draw simulated barcode lines on top right
-      let barcodeX = pageWidth - 45;
-      doc.setDrawColor(10, 10, 10);
-      doc.setLineWidth(0.3);
-      for(let i=0; i<15; i++) {
-        const thickness = (i % 3 === 0) ? 0.6 : (i % 2 === 0) ? 0.35 : 0.15;
-        doc.setLineWidth(thickness);
-        doc.line(barcodeX + (i * 1.8), y + 1.5, barcodeX + (i * 1.8), y + 7);
+      // Draw simulated barcode lines on top right only if prescription number exists
+      if (prescriptionNo) {
+        let barcodeX = pageWidth - 45;
+        doc.setDrawColor(10, 10, 10);
+        doc.setLineWidth(0.3);
+        for(let i=0; i<15; i++) {
+          const thickness = (i % 3 === 0) ? 0.6 : (i % 2 === 0) ? 0.35 : 0.15;
+          doc.setLineWidth(thickness);
+          doc.line(barcodeX + (i * 1.8), y + 1.5, barcodeX + (i * 1.8), y + 7);
+        }
       }
       y += 12;
 
@@ -909,15 +693,15 @@ Generated on: ${new Date().toLocaleString()}
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text(`Patient: ${patientName}`, margin + 4, y + 6);
+      doc.text(`Patient: ${patientName || "—"}`, margin + 4, y + 6);
       
       doc.setFont("Helvetica", "normal");
-      doc.text(`Age: ${age}`, margin + 105, y + 6);
-      doc.text(`Department: ${department}`, margin + 135, y + 6);
+      doc.text(`Age: ${age ? `${age} Years` : "—"}`, margin + 105, y + 6);
+      doc.text(`Department: ${department || "—"}`, margin + 135, y + 6);
 
       doc.text(`Facility: SHC Clinic & Pharmacy`, margin + 4, y + 14);
-      doc.text(`Appoint# ${appointmentNo}`, margin + 105, y + 14);
-      doc.text(`App Taken: ${appointmentTime}`, margin + 135, y + 14);
+      doc.text(`Appoint# ${appointmentNo || "—"}`, margin + 105, y + 14);
+      doc.text(`App Taken: ${appointmentTime || "—"}`, margin + 135, y + 14);
       y += 28;
 
       // Clinical information grid (Vitals on the left, complaints and diagnosis on the right)
@@ -950,6 +734,20 @@ Generated on: ${new Date().toLocaleString()}
       // Reset y back to start of block for Right Column: Chief Complaints etc
       let rightY = y - 24;
 
+      if (location) {
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(30, 30, 30);
+        doc.text("Location:", middleX + 5, rightY);
+        rightY += 4.5;
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(70, 70, 70);
+        const wrappedLoc = doc.splitTextToSize(location, pageWidth - middleX - margin - 5);
+        doc.text(wrappedLoc, middleX + 5, rightY);
+        rightY += (wrappedLoc.length * 4.5) + 2.5;
+      }
+
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(9.5);
       doc.setTextColor(30, 30, 30);
@@ -959,7 +757,7 @@ Generated on: ${new Date().toLocaleString()}
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
-      const wrappedComplaints = doc.splitTextToSize(chiefComplaints, pageWidth - middleX - margin - 5);
+      const wrappedComplaints = doc.splitTextToSize(chiefComplaints || "—", pageWidth - middleX - margin - 5);
       doc.text(wrappedComplaints, middleX + 5, rightY);
       rightY += (wrappedComplaints.length * 4.5) + 3;
 
@@ -967,7 +765,7 @@ Generated on: ${new Date().toLocaleString()}
       doc.text("Past History:", middleX + 5, rightY);
       rightY += 4.5;
       doc.setFont("Helvetica", "normal");
-      const wrappedHistory = doc.splitTextToSize(pastMedicalHistory, pageWidth - middleX - margin - 5);
+      const wrappedHistory = doc.splitTextToSize(pastMedicalHistory || "—", pageWidth - middleX - margin - 5);
       doc.text(wrappedHistory, middleX + 5, rightY);
       rightY += (wrappedHistory.length * 4.5) + 3;
 
@@ -975,7 +773,7 @@ Generated on: ${new Date().toLocaleString()}
       doc.text("Other Findings:", middleX + 5, rightY);
       rightY += 4.5;
       doc.setFont("Helvetica", "normal");
-      const wrappedFindings = doc.splitTextToSize(otherFindings || "Normal examination", pageWidth - middleX - margin - 5);
+      const wrappedFindings = doc.splitTextToSize(otherFindings || "—", pageWidth - middleX - margin - 5);
       doc.text(wrappedFindings, middleX + 5, rightY);
       rightY += (wrappedFindings.length * 4.5) + 3;
 
@@ -984,7 +782,7 @@ Generated on: ${new Date().toLocaleString()}
       rightY += 4.5;
       doc.setFont("Helvetica", "bold");
       doc.setTextColor(175, 20, 20); // Clinical red for diagnosis
-      doc.text(diagnosis || "Non-specific Illness", middleX + 5, rightY);
+      doc.text(diagnosis || "—", middleX + 5, rightY);
       
       // Push y past both columns
       y = Math.max(y + 12, rightY + 12);
@@ -1107,7 +905,7 @@ Generated on: ${new Date().toLocaleString()}
       doc.text("Reg #80551", pageWidth - margin - 45, y + 8);
 
       // Trigger automatic save
-      const sanitizedName = patientName.replace(/\s+/g, '_');
+      const sanitizedName = (patientName || 'Prescription').replace(/\s+/g, '_');
       doc.save(`Alabama_Prescription_${sanitizedName}.pdf`);
     } catch (pdfErr) {
       console.error("PDF generation failure error:", pdfErr);
@@ -1121,11 +919,6 @@ Generated on: ${new Date().toLocaleString()}
       console.warn("Print trigger blocked in sandbox container", err);
     }
   };
-
-  // Run initial synthesis trigger to fetch defaults on first render
-  useEffect(() => {
-    handleSetCurrentTime();
-  }, []);
 
   return (
     <div id="buet-parent-frame" className="min-h-screen bg-[#f3f4f6] text-slate-800 font-sans">
@@ -1176,16 +969,156 @@ Generated on: ${new Date().toLocaleString()}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="bg-[#A32638] px-6 py-4 text-white border-b border-[#821e2c]">
                 <h3 className="font-bold flex items-center gap-2 text-sm sm:text-base">
-                  <ClipboardList className="h-4.5 w-4.5 text-rose-100" /> Patient Clinical Intake & Vitals
+                  <ClipboardList className="h-4.5 w-4.5 text-rose-100" /> Patient Clinical Intake & Demographics
                 </h3>
                 <p className="text-[11px] text-red-100/90 mt-0.5 font-sans">
-                  Enter clinical symptoms and customize doctor notes or diagnostics
+                  Enter patient details, clinical symptoms, and customize diagnoses or notes
                 </p>
               </div>
 
               <div className="p-6 space-y-5">
+
+                {/* Patient Information Grid */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-[#A32638]" /> Patient Demographics
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium">Input Details</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Patient Name</label>
+                      <input
+                        type="text"
+                        value={patientName}
+                        onChange={(e) => setPatientName(e.target.value)}
+                        placeholder="e.g. John Doe"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Age (Years)</label>
+                      <input
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+                        placeholder="e.g. 21"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Department / Major</label>
+                      <input
+                        type="text"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        placeholder="e.g. Engineering, Biology..."
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Student / Patient ID</label>
+                      <input
+                        type="text"
+                        value={patientId}
+                        onChange={(e) => setPatientId(e.target.value)}
+                        placeholder="e.g. CWID #12345678"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Appointment #</label>
+                      <input
+                        type="text"
+                        value={appointmentNo}
+                        onChange={(e) => setAppointmentNo(e.target.value)}
+                        placeholder="e.g. 1"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Appointment Time</label>
+                        <button
+                          type="button"
+                          onClick={handleSetCurrentTime}
+                          className="text-[9px] text-[#A32638] font-bold hover:underline cursor-pointer"
+                        >
+                          Set Now
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={appointmentTime}
+                        onChange={(e) => setAppointmentTime(e.target.value)}
+                        placeholder="e.g. 10/10/2026 10:30 AM"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Prescription #</label>
+                        <button
+                          type="button"
+                          onClick={handleGeneratePrescriptionNo}
+                          className="text-[9px] text-[#A32638] font-bold hover:underline cursor-pointer"
+                        >
+                          Generate
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={prescriptionNo}
+                        onChange={(e) => setPrescriptionNo(e.target.value)}
+                        placeholder="e.g. 80551"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Attending Doctor</label>
+                      <input
+                        type="text"
+                        value={doctorName}
+                        onChange={(e) => setDoctorName(e.target.value)}
+                        placeholder="e.g. Dr. Jane Smith, MD"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+                  </div>
+                </div>
                 
-                {/* CRITICAL Symptom Input Section as requested */}
+                {/* Location Input Section - Positioned before Chief Complaints */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-[#A32638]" /> Location / Clinic Site
+                    </label>
+                    <span className="text-[10px] text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded font-normal">
+                      Input Box
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-normal mb-1">
+                    Enter the clinic location, exam room, or facility intake site before recording symptoms.
+                  </p>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Student Health Center, Room 102 / Tuscaloosa Campus Clinic"
+                    className="w-full text-xs sm:text-sm font-sans bg-white border border-slate-200 px-3 py-2 rounded-lg text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-[#A32638] focus:border-transparent leading-relaxed"
+                  />
+                </div>
+
+                {/* CRITICAL Symptom Input Section */}
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                   <label className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center justify-between">
                     <span>Chief Complaints (Current Symptoms) *</span>
@@ -1225,7 +1158,60 @@ Generated on: ${new Date().toLocaleString()}
                   </div>
                 </div>
 
+                {/* Additional Clinical Reasoning & Notes */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="border-b border-slate-200 pb-1.5">
+                    <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-[#A32638]" /> Clinical History & Findings
+                    </span>
+                  </div>
 
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Past Medical History</label>
+                      <input
+                        type="text"
+                        value={pastMedicalHistory}
+                        onChange={(e) => setPastMedicalHistory(e.target.value)}
+                        placeholder="e.g. No known chronic illnesses or drug allergies"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Other Examination Findings</label>
+                      <input
+                        type="text"
+                        value={otherFindings}
+                        onChange={(e) => setOtherFindings(e.target.value)}
+                        placeholder="e.g. Clear breath sounds, no lymphadenopathy"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Clinical Diagnosis</label>
+                      <input
+                        type="text"
+                        value={diagnosis}
+                        onChange={(e) => setDiagnosis(e.target.value)}
+                        placeholder="e.g. Acute Viral Pharyngitis"
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5 uppercase">Doctor's Handwritten Note / Special Instructions</label>
+                      <textarea
+                        rows={2}
+                        value={doctorNote}
+                        onChange={(e) => setDoctorNote(e.target.value)}
+                        placeholder="e.g. Drink warm fluids, avoid cold water, review in 5 days..."
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#A32638]"
+                      />
+                    </div>
+                  </div>
+                </div>
 
               </div>
             </div>
@@ -1433,6 +1419,15 @@ Generated on: ${new Date().toLocaleString()}
               <span className="text-xs font-semibold text-slate-500">Digital Prescription Controls:</span>
               <div className="flex flex-wrap gap-2">
                 <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer duration-200 bg-white"
+                  title="Clear all inputs and outputs"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-slate-500" /> Reset / Clear Form
+                </button>
+
+                <button
                   onClick={handleSavePrescription}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer duration-200 ${saveStatus ? 'bg-slate-100 border-slate-350 text-slate-800 border' : 'bg-[#A32638] hover:bg-[#821e2c] text-white shadow-xs'}`}
                 >
@@ -1517,7 +1512,7 @@ Generated on: ${new Date().toLocaleString()}
 
                   <div className="w-full flex justify-between items-center text-[9px] text-slate-450 pt-1.5 border-t border-slate-100 mt-2">
                     <span>University Health Portal Services</span>
-                    <span className="font-medium">Printed {appointmentTime || new Date().toLocaleString()} | Page 1 of 1</span>
+                    <span className="font-medium">{appointmentTime ? `Printed ${appointmentTime} | Page 1 of 1` : ''}</span>
                   </div>
                 </header>
 
@@ -1535,21 +1530,22 @@ Generated on: ${new Date().toLocaleString()}
                     <div className="h-[2px] w-36 bg-linear-to-r from-transparent via-slate-400 to-transparent mx-auto mt-1" />
                   </div>
 
-                  {/* Simulated barcode exactly like the image #80551 */}
+                  {/* Simulated barcode */}
                   <div className="text-right flex flex-col items-end">
                     <span className="text-[10px] font-mono font-bold text-slate-800 block mb-0.5">
-                      Prescription #{prescriptionNo}
+                      Prescription #{prescriptionNo || "—"}
                     </span>
-                    {/* CSS bar generation */}
-                    <div className="flex gap-[1.5px] items-stretch h-6 mt-1 overflow-hidden opacity-100">
-                      {[1,3,1,2,3,4,1,3,2,1,2,4,1,3,1,2,1,3,4,2].map((w,i) => (
-                        <div 
-                          key={i} 
-                          className="bg-black" 
-                          style={{ width: `${w * 0.75}px` }} 
-                        />
-                      ))}
-                    </div>
+                    {prescriptionNo ? (
+                      <div className="flex gap-[1.5px] items-stretch h-6 mt-1 overflow-hidden opacity-100">
+                        {[1,3,1,2,3,4,1,3,2,1,2,4,1,3,1,2,1,3,4,2].map((w,i) => (
+                          <div 
+                            key={i} 
+                            className="bg-black" 
+                            style={{ width: `${w * 0.75}px` }} 
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -1564,7 +1560,7 @@ Generated on: ${new Date().toLocaleString()}
 
                     <div className="sm:col-span-3">
                       <span className="text-slate-500 font-bold block uppercase text-[9px]">Age</span>
-                      <span className="font-bold text-slate-900">{age !== undefined ? age : "—"}</span>
+                      <span className="font-bold text-slate-900">{age ? `${age} Years` : "—"}</span>
                     </div>
 
                     <div className="sm:col-span-3">
@@ -1628,33 +1624,45 @@ Generated on: ${new Date().toLocaleString()}
                   {/* Right Column (Chief Complaints output box & Diagnosis) */}
                   <div className="sm:col-span-8 space-y-4 border-l border-slate-100 sm:pl-6">
                     
+                    {/* Location reflection */}
+                    <div>
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Location / Facility:</h4>
+                      <p className="mt-1 text-slate-800 font-semibold leading-relaxed text-xs">
+                        {location ? location : <span className="text-slate-400 font-normal italic">—</span>}
+                      </p>
+                    </div>
+
                     {/* Symptom Input reflection */}
                     <div>
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Chief Complaints:</h4>
                       <p className="mt-1 text-slate-900 font-bold leading-relaxed text-xs sm:text-sm">
-                        {chiefComplaints ? chiefComplaints : <span className="text-slate-400 font-normal italic">None declared. Enter complaints in left panel.</span>}
+                        {chiefComplaints ? chiefComplaints : <span className="text-slate-400 font-normal italic">—</span>}
                       </p>
                     </div>
 
                     <div>
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Past Medical History:</h4>
                       <p className="mt-1 text-slate-700 text-xs font-medium">
-                        {pastMedicalHistory || "None declared"}
+                        {pastMedicalHistory ? pastMedicalHistory : <span className="text-slate-400 font-normal italic">—</span>}
                       </p>
                     </div>
 
                     <div>
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Other Findings:</h4>
                       <p className="mt-1 text-slate-700 text-xs font-medium">
-                        {otherFindings || "Normal examination completed."}
+                        {otherFindings ? otherFindings : <span className="text-slate-400 font-normal italic">—</span>}
                       </p>
                     </div>
 
                     <div>
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Diagnosis:</h4>
-                      <p className="mt-1.5 text-slate-900 font-bold text-xs uppercase tracking-wider bg-slate-100 border border-slate-300 rounded px-2.5 py-1 max-w-fit">
-                        {diagnosis || "Awaiting Clinical Output"}
-                      </p>
+                      {diagnosis ? (
+                        <p className="mt-1.5 text-slate-900 font-bold text-xs uppercase tracking-wider bg-slate-100 border border-slate-300 rounded px-2.5 py-1 max-w-fit">
+                          {diagnosis}
+                        </p>
+                      ) : (
+                        <span className="text-slate-400 text-xs italic font-normal">—</span>
+                      )}
                     </div>
 
                   </div>
@@ -1678,7 +1686,7 @@ Generated on: ${new Date().toLocaleString()}
                         ))}
                       </ol>
                     ) : (
-                      <p className="text-xs text-slate-400 italic">No diagnostic laboratory tests recommended.</p>
+                      <p className="text-xs text-slate-400 italic">—</p>
                     )}
                   </div>
 
@@ -1740,7 +1748,7 @@ Generated on: ${new Date().toLocaleString()}
                           ) : (
                             <tr>
                               <td colSpan={5} className="py-4 text-center text-slate-400 italic">
-                                No clinical prescription medications assigned.
+                                —
                               </td>
                             </tr>
                           )}
@@ -1795,9 +1803,13 @@ Generated on: ${new Date().toLocaleString()}
                 <div className="border-t border-slate-200 pt-5 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 text-[10px] text-slate-400 text-center sm:text-left shadow-2xs p-3 rounded bg-slate-50">
                   <div className="space-y-1">
                     <span className="text-slate-905 font-bold block uppercase tracking-wide text-[9px]">Follow Up Visit</span>
-                    <p className="font-semibold text-slate-700 text-xs">
-                      Re-evaluate at the Student Health Center and Pharmacy in 14 days or sooner if symptoms worsen.
-                    </p>
+                    {(diagnosis || doctorNote || chiefComplaints || medications.length > 0) ? (
+                      <p className="font-semibold text-slate-700 text-xs">
+                        Re-evaluate at the Student Health Center and Pharmacy in 14 days or sooner if symptoms worsen.
+                      </p>
+                    ) : (
+                      <p className="font-semibold text-slate-400 text-xs italic">—</p>
+                    )}
                   </div>
 
                   <div className="border-l pl-4 border-slate-300 text-right shrink-0">
@@ -1936,6 +1948,9 @@ Generated on: ${new Date().toLocaleString()}
           </div>
 
         </div>
+
+        {/* Visitor Traffic & Analytics: Option Below to show visitors today, this month, this year */}
+        <VisitorCounter />
 
       </div>
 

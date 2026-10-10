@@ -4,6 +4,7 @@ export interface PrescriptionPrescription {
   prescriptionNo: string;
   patientName: string;
   patientId: string;
+  location?: string;
   age: number;
   department: string;
   designation: string;
