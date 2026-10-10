@@ -1,0 +1,6 @@
+{
+  "name": "Preventive Care Advisor",
+  "description": "An interactive, evidence-based preventive care screening planner that provides routine checks and screenings based on age, gender, biometrics, lifestyle, and family medical history using USPSTF and other official medical guidelines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
