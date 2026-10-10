@@ -8,6 +8,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Ensure HMR is disabled in AI Studio cloud preview environment to prevent WebSocket errors
+process.env.DISABLE_HMR = "true";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,9 +19,9 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function generateContentWithFallback(ai: any, params: any) {
   // A list of valid, non-deprecated models to try in sequence if one returns a 503 or 429
   const modelsToTry = [
-    params.model || "gemini-3.5-flash",
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest"
+    params.model || "gemini-3.8-flash",
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite"
   ];
   
   let lastError = null;
@@ -266,7 +269,7 @@ Please generate a realistic and clinically valid set of:
 `;
 
       const response = await generateContentWithFallback(ai, {
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: prompt,
         config: {
           systemInstruction: "You are Dr. Sazzad Hossain Razib, Senior Medical Specialist at Bangladesh University of Engineering and Technology (BUET) Medical Center. You provide accurate, authentic prescription datasets with Bangladeshi clinical practices (e.g., standard brand names or generics like Tab. Napa or Tab. Fexo, with frequency counts like 1+0+1 or 1+1+1). You must output valid JSON.",
@@ -397,7 +400,7 @@ Please generate a realistic and clinically valid set of:
       });
 
       const response = await generateContentWithFallback(ai, {
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: `
 You are Dr. Sazzad Hossain Razib, Senior Medical Specialist at Bangladesh University of Engineering and Technology (BUET) Medical Center.
 A patient has sent an enquiry about their digital prescription:
@@ -661,7 +664,7 @@ For every test:
 `;
 
       const response = await generateContentWithFallback(ai, {
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: prompt,
         config: {
           systemInstruction: "You are a board-certified primary care physician and clinical preventive medicine specialist. Your task is to provide clinical routine guidelines for a patient profile. You must output a structured, clinically precise schema.",
@@ -770,7 +773,7 @@ Please provide a supportive, objective, board-certified primary care physician r
 `;
 
       const response = await generateContentWithFallback(ai, {
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: prompt,
         config: {
           systemInstruction: "You are a board-certified primary care physician and preventive medicine specialist representing the University of Alabama Student Health Center and Pharmacy. Word your answer with absolute scientific rigor, caring support, and elegant clarity.",
@@ -919,7 +922,10 @@ Please provide a supportive, objective, board-certified primary care physician r
   // Vite Integration
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);

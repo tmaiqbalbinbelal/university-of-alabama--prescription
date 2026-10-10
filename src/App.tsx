@@ -333,7 +333,8 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Server returned HTTP ${response.status}`);
       }
 
       const data = await response.json();
@@ -483,7 +484,8 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Server returned HTTP ${response.status}`);
       }
 
       const data = await response.json();
@@ -1375,11 +1377,7 @@ Generated on: ${new Date().toLocaleString()}
                     </span>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm("Are you sure you want to clear all prescribed medications?")) {
-                          setMedications([]);
-                        }
-                      }}
+                      onClick={() => setMedications([])}
                       className="text-[10px] text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer"
                     >
                       Clear All

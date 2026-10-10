@@ -3,7 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>Preventive Care Advisor</title>
+    <meta name="description" content="An interactive, evidence-based preventive care screening planner that provides routine checks and screenings based on age, gender, biometrics, lifestyle, and family medical history using USPSTF and other official medical guidelines." />
+    <meta property="og:title" content="Preventive Care Advisor" />
+    <meta property="og:description" content="An interactive, evidence-based preventive care screening planner that provides routine checks and screenings based on age, gender, biometrics, lifestyle, and family medical history using USPSTF and other official medical guidelines." />
+    <script>
+      // Suppress Vite HMR WebSocket connection failure notices in cloud preview environment
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event && (event.reason ? String(event.reason.message || event.reason) : '');
+        if (reason && (reason.includes('WebSocket') || reason.includes('websocket'))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        var msg = event && (event.message ? String(event.message) : '');
+        if (msg && (msg.includes('WebSocket') || msg.includes('websocket'))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
